@@ -1,74 +1,66 @@
 # Sequence Diagram
 
-## Main Flow: Client discovers an architect and sends an inquiry
+## Flow 1: Architect Registration & Project Posting
 
 ```mermaid
 sequenceDiagram
-    actor Client
     actor Architect
     participant Frontend
     participant AuthService
     participant ProjectService
-    participant InquiryService
-    participant Database
+    participant DB
 
-    %% --- Client Registration & Login ---
-    Client->>Frontend: Register (name, email, password, role=client)
+    Architect->>Frontend: Register (name, email, password)
     Frontend->>AuthService: POST /api/auth/register
-    AuthService->>Database: Save user record
-    Database-->>AuthService: User saved
-    AuthService-->>Frontend: 201 Created + JWT token
-    Frontend-->>Client: Redirect to Client Dashboard
+    AuthService->>DB: Save user record
+    DB-->>AuthService: Saved
+    AuthService-->>Frontend: 201 + JWT token
+    Frontend-->>Architect: Redirect to Dashboard
 
-    %% --- Architect posts a project ---
-    Architect->>Frontend: Login (email, password)
-    Frontend->>AuthService: POST /api/auth/login
-    AuthService->>Database: Validate credentials
-    Database-->>AuthService: User found
-    AuthService-->>Frontend: 200 OK + JWT token
-    Frontend-->>Architect: Redirect to Architect Dashboard
-
-    Architect->>Frontend: Submit new project (title, images, description, category)
-    Frontend->>ProjectService: POST /api/projects (with JWT)
-    ProjectService->>Database: Save project record
-    Database-->>ProjectService: Project saved
+    Architect->>Frontend: Post new project (title, images, category)
+    Frontend->>ProjectService: POST /api/projects
+    ProjectService->>DB: Save project
+    DB-->>ProjectService: Saved
     ProjectService-->>Frontend: 201 Created
     Frontend-->>Architect: Project live on portfolio
+```
 
-    %% --- Client browses and contacts architect ---
+## Flow 2: Client Browses & Sends Inquiry
+
+```mermaid
+sequenceDiagram
+    actor Client
+    participant Frontend
+    participant AuthService
+    participant ProjectService
+    participant InquiryService
+    participant DB
+
+    Client->>Frontend: Register & Login
+    Frontend->>AuthService: POST /api/auth/login
+    AuthService->>DB: Validate credentials
+    DB-->>AuthService: User found
+    AuthService-->>Frontend: 200 + JWT token
+    Frontend-->>Client: Redirect to Client Dashboard
+
     Client->>Frontend: Search projects by category
     Frontend->>ProjectService: GET /api/projects?category=residential
-    ProjectService->>Database: Query matching projects
-    Database-->>ProjectService: Project list
-    ProjectService-->>Frontend: 200 OK + project data
-    Frontend-->>Client: Display project cards
+    ProjectService->>DB: Query projects
+    DB-->>ProjectService: Project list
+    ProjectService-->>Frontend: 200 + data
+    Frontend-->>Client: Show project cards
 
-    Client->>Frontend: Click on project → View architect profile
+    Client->>Frontend: View architect profile
     Frontend->>ProjectService: GET /api/architects/:id
-    ProjectService->>Database: Fetch architect + projects
-    Database-->>ProjectService: Architect profile data
+    ProjectService->>DB: Fetch profile
+    DB-->>ProjectService: Profile data
     ProjectService-->>Frontend: 200 OK
-    Frontend-->>Client: Show full architect profile
+    Frontend-->>Client: Show architect profile
 
-    Client->>Frontend: Send inquiry (message, project reference)
-    Frontend->>InquiryService: POST /api/inquiries (with JWT)
-    InquiryService->>Database: Save inquiry record
-    Database-->>InquiryService: Saved
+    Client->>Frontend: Send inquiry
+    Frontend->>InquiryService: POST /api/inquiries
+    InquiryService->>DB: Save inquiry
+    DB-->>InquiryService: Saved
     InquiryService-->>Frontend: 201 Created
-    Frontend-->>Client: "Inquiry sent successfully"
-
-    %% --- Architect views and replies ---
-    Architect->>Frontend: Open Inquiries tab
-    Frontend->>InquiryService: GET /api/inquiries/received (with JWT)
-    InquiryService->>Database: Fetch inquiries for architect
-    Database-->>InquiryService: Inquiry list
-    InquiryService-->>Frontend: 200 OK
-    Frontend-->>Architect: Display inquiries
-
-    Architect->>Frontend: Reply to inquiry
-    Frontend->>InquiryService: POST /api/inquiries/:id/reply
-    InquiryService->>Database: Save reply
-    Database-->>InquiryService: Saved
-    InquiryService-->>Frontend: 200 OK
-    Frontend-->>Architect: Reply sent
+    Frontend-->>Client: Inquiry sent!
 ```
